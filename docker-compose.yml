@@ -1,0 +1,22 @@
+services:
+  spells:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: spells-web:latest
+    container_name: spells-web
+    restart: unless-stopped
+    networks:
+      - coolify
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - traefik.http.routers.spells.rule=Host(`spells.startidea.tech`)
+      - traefik.http.routers.spells.entrypoints=websecure
+      - traefik.http.routers.spells.tls=true
+      - traefik.http.routers.spells.tls.certresolver=letsencrypt
+      - traefik.http.services.spells.loadbalancer.server.port=80
+
+networks:
+  coolify:
+    external: true
