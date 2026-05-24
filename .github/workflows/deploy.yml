@@ -22,7 +22,9 @@ jobs:
   deploy:
     name: SSH + build + recreate
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    # 15 min: el build de Astro en este VPS compartido tarda 3-7 min según
+    # carga concurrente. Healthcheck con retry suma ~80s más. 15 min da margen.
+    timeout-minutes: 15
     steps:
       - name: Deploy via OpenSSH
         env:
