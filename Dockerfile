@@ -40,8 +40,10 @@ server {
   add_header X-Frame-Options "DENY" always;
   add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
+  # try_files prueba: archivo exacto → .html → directorio/index.html → 404.
+  # Esto hace que /sobre sirva /sobre/index.html sin redirect (clean URL, mejor SEO).
   location / {
-    try_files $uri $uri/ $uri.html =404;
+    try_files $uri $uri.html $uri/index.html =404;
   }
 }
 EOF
