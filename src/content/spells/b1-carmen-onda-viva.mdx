@@ -1,0 +1,87 @@
+---
+title: "Carmen onda viva"
+summary: "La onda del agente de voz cambia de color y amplitud según habla o escucha, interpolando suavemente. No un salto. Una transición."
+category: "Voice"
+difficulty: "S"
+sourceProject: "TodoMerchandising · Carmen"
+sourceUrl: "https://merchandising.hubstartidea.es"
+publishedAt: 2026-05-24
+tags: ["canvas", "rAF", "audio"]
+---
+
+## Qué hace
+
+El widget del agente de voz Carmen tenía una onda gris-magenta que **saltaba**
+de un color a otro al cambiar entre hablar y escuchar. Funcional, pero plano.
+
+Con este spell la onda **respira**: el color y la amplitud máxima interpolan
+suavemente, las barras tienen una pequeña curva en U invertida (los extremos
+algo más bajos que el centro, "sonrisa"), un gradiente vertical sutil les da
+profundidad, y cada barra individual sigue al sample real con suavizado de
+ataque rápido / liberación lenta.
+
+## Por qué
+
+Cuando un usuario habla por primera vez con un agente de voz, la única señal
+visual de que "está vivo" es la onda. Si la onda parpadea o salta, parece
+una visualización técnica. Si **respira**, parece un ser.
+
+## Código
+
+```ts
+const heights = new Float32Array(slices);
+let mode = 0; // 0=escuchando · 1=hablando, interpolado
+
+const lerp = (a, b, t) => a + (b - a) * t;
+const colorIdle = { r: 0xa0, g: 0x9e, b: 0x98 };    // gris brand
+const colorActive = { r: 0xe6, g: 0x3e, b: 0x73 };  // magenta brand
+
+function draw(now) {
+  ctx.clearRect(0, 0, w, h);
+
+  // Modo: ataque 0.18, liberación 0.08 — Carmen "se anima" rápido y "se calma" suave
+  const targetMode = isSpeaking ? 1 : 0;
+  const ease = targetMode > mode ? 0.18 : 0.08;
+  mode += (targetMode - mode) * ease;
+
+  const r = Math.round(lerp(colorIdle.r, colorActive.r, mode));
+  const g = Math.round(lerp(colorIdle.g, colorActive.g, mode));
+  const b = Math.round(lerp(colorIdle.b, colorActive.b, mode));
+  const maxScale = lerp(0.35, 0.95, mode); // 35% al escuchar, 95% al hablar
+
+  for (let i = 0; i < slices; i++) {
+    const v = (sample[i] || 0) / 255;
+
+    // Curva U invertida: extremos un 25% más bajos → "sonrisa"
+    const positional = 1 - Math.pow((i / (slices - 1)) * 2 - 1, 2) * 0.25;
+    const target = Math.max(0.04, v * maxScale * positional);
+
+    // Suavizado por barra
+    const prev = heights[i] ?? 0;
+    const followEase = target > prev ? 0.35 : 0.18;
+    heights[i] = prev + (target - prev) * followEase;
+
+    // Gradiente vertical sutil
+    const grad = ctx.createLinearGradient(0, y, 0, y + barH);
+    grad.addColorStop(0, `rgba(${r},${g},${b},0.85)`);
+    grad.addColorStop(0.5, `rgba(${r},${g},${b},1)`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0.85)`);
+    ctx.fillStyle = grad;
+
+    ctx.beginPath();
+    ctx.roundRect(x, y, bw, barH, 3);
+    ctx.fill();
+  }
+
+  requestAnimationFrame(draw);
+}
+```
+
+## Detalles que importan
+
+- **Ataque ≠ liberación**: la onda se anima al detectar voz más rápido (0.18) de lo
+  que se calma cuando llega silencio (0.08). Sensación humana, no robot.
+- **Curva "sonrisa"** en los extremos (factor 0.25): hace que la onda parezca
+  contenida visualmente, no un bloque rectangular.
+- **`roundRect`** está soportado en Chrome 99+, Safari 16+, Firefox 109+. Con
+  fallback a `rect` para entornos viejos.

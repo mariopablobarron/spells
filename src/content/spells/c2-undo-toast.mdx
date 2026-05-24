@@ -1,0 +1,81 @@
+---
+title: "Undo toast con commit diferido"
+summary: "El usuario pulsa borrar y la promo desaparece de la lista. Pero el backend NO se llama hasta los 7 segundos. Si pulsa deshacer antes, no pasó nada. Adiós a los confirm() hostiles."
+category: "Admin"
+difficulty: "S"
+sourceProject: "TodoMerchandising · Admin promociones"
+publishedAt: 2026-05-24
+tags: ["ux", "react", "context"]
+---
+
+## El patrón
+
+**Optimistic UI + commit diferido.** En lugar de:
+
+1. Confirm hostil ("¿Seguro que quieres borrar?")
+2. Click sí
+3. Backend call
+4. Toast "Borrado"
+
+Hacemos:
+
+1. Click borrar → desaparece de la UI inmediatamente
+2. Toast con timer visible: *"Promoción eliminada · Deshacer"*
+3. Si deshacer antes de 7s → revertir UI, **el backend nunca se entera**
+4. Si timeout → llamar al backend para hacerlo firme
+
+Beneficios:
+- El usuario no pelea con confirms
+- Equivocarse es indoloro
+- Las acciones se sienten instantáneas
+
+## Implementación
+
+`<UndoToastHost/>` provee context. `useUndoToast()` hook devuelve `showUndoToast`.
+
+```tsx
+// En el layout (una vez)
+<UndoToastHost>
+  <Pagina />
+</UndoToastHost>
+
+// En cualquier hijo
+const { showUndoToast } = useUndoToast();
+
+function deletePromo(id) {
+  const prev = promos;
+  setPromos(p => p.filter(x => x.id !== id));  // UI inmediato
+
+  showUndoToast({
+    message: "Promoción eliminada",
+    duration: 9000,
+    onUndo: () => setPromos(prev),               // revertir
+    onCommit: async () => {                       // commit firme
+      await fetch(`/api/promos/${id}`, { method: "DELETE" });
+    },
+  });
+}
+```
+
+## Detalles que importan
+
+- **Progress bar visual** en el toast (1 → 0): el usuario sabe cuánto le queda.
+- **Una sola toast a la vez**: si llega otra mientras hay una pendiente, la
+  anterior se commit-ea (no se pierde).
+- **Dismiss = commit firme** (igual que vencer): el botón X confirma.
+- **Cap del timer**: 7s default. 9s para borrados (más miedo de equivocarse).
+- **Si `commitImmediate: true`**: hace commit al instante; `onUndo` deberá
+  hacer la llamada inversa al backend (para acciones que no toleran espera).
+
+## Cuándo NO usarlo
+
+- **Pagos / cobros**: nunca diferir un cobro.
+- **Acciones irreversibles del lado backend**: si tu DELETE dispara un workflow
+  externo no-revertible, no uses commit diferido. Hazlo immediate.
+- **Acciones que afectan a otros usuarios en tiempo real**: si publicar
+  algo lo ve toda la comunidad, no diferir.
+
+## Resultado
+
+Borrar una promoción dejó de dar miedo. Pasamos de 2 modals (`confirm`
+nativo + toast posterior) a **1 micro-interacción**.

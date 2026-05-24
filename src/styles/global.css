@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #1f1f22;
+  --color-bone: #f5f0e6;
+  --color-bone-soft: #faf8f5;
+  --color-line: #e8e2d5;
+  --color-accent: #e63e73;
+  --color-accent-deep: #b62d59;
+  --color-social: #10b981;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bone);
+  color: var(--color-ink);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+}
+
+.prose-spell pre {
+  @apply rounded-xl border border-line bg-ink p-4 text-sm overflow-x-auto;
+  font-family: var(--font-mono);
+  color: #f5f0e6;
+}
+.prose-spell code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+.prose-spell p { @apply my-3 leading-relaxed text-ink/85; }
+.prose-spell h2 { @apply mt-8 mb-3 text-2xl font-semibold; }
+.prose-spell h3 { @apply mt-6 mb-2 text-lg font-semibold; }
+.prose-spell ul { @apply my-3 ml-6 list-disc text-ink/85; }
+.prose-spell a { @apply text-accent underline-offset-2 hover:underline; }

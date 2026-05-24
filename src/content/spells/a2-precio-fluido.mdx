@@ -1,0 +1,84 @@
+---
+title: "Precio fluido entre tiers"
+summary: "El total no salta de 4,89 € a 3,12 €. Interpola con ease-out cúbico durante 350 ms. El usuario ve el descuento llegando."
+category: "Catalogue"
+difficulty: "S"
+sourceProject: "TodoMerchandising · PriceTierTable"
+sourceUrl: "https://merchandising.hubstartidea.es"
+publishedAt: 2026-05-24
+tags: ["rAF", "money", "react"]
+---
+
+## El problema
+
+En un configurador B2B típico, al cambiar la cantidad de 50 a 100 unidades,
+el precio total **salta** de un valor a otro. Es información, no
+experiencia. El usuario no percibe que está "ganando" algo.
+
+## El spell
+
+Componente React `<AnimatedPrice/>` que interpola entre el valor anterior y
+el nuevo cuando cambia la prop `cents`. **350 ms ease-out cubic** — rápido
+arranque, llegada suave, sensación de "el número aterrizando".
+
+## Código
+
+```tsx
+"use client";
+import { useEffect, useRef, useState } from "react";
+
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
+export function AnimatedPrice({ cents, format, duration = 350 }) {
+  const [display, setDisplay] = useState(
+    typeof cents === "number" ? cents : null,
+  );
+  const fromRef = useRef(typeof cents === "number" ? cents : 0);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (typeof cents !== "number") { setDisplay(null); fromRef.current = 0; return; }
+    if (display === null) { setDisplay(cents); fromRef.current = cents; return; }
+    if (Math.abs(cents - fromRef.current) < 1) {
+      setDisplay(cents); fromRef.current = cents; return;
+    }
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setDisplay(cents); fromRef.current = cents; return;
+    }
+
+    const from = display, to = cents, start = performance.now();
+    if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const v = Math.round(from + (to - from) * easeOutCubic(t));
+      setDisplay(v);
+      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+      else { fromRef.current = to; rafRef.current = null; }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current != null) cancelAnimationFrame(rafRef.current); };
+  }, [cents]);
+
+  return <span>{display === null ? "—" : format(display)}</span>;
+}
+```
+
+## Uso
+
+```tsx
+<AnimatedPrice
+  cents={totalCents}
+  format={(c) => `${(c / 100).toFixed(2)} €`}
+/>
+```
+
+## Decisiones
+
+- **Sin animar la primera aparición**: si el precio entra desde `null`,
+  aparece directo. Animar de "nada" a "algo" se siente artificial.
+- **Sin animar cambios &lt;1 céntimo**: la animación distrae cuando el cambio
+  es trivial (ej. recalcular IVA).
+- **`Math.round`** dentro del loop: el ojo no percibe decimales mientras
+  el número se mueve. Solo cuando termina.
+- **Reduced-motion respect**: salto directo si el usuario lo prefiere.

@@ -1,0 +1,53 @@
+---
+import Base from "@/layouts/Base.astro";
+---
+<Base title="Por qué un Spellbook · Startidea">
+  <article class="mx-auto max-w-3xl px-6 py-16">
+    <h1 class="font-display text-4xl font-semibold leading-tight">Por qué hacemos esto</h1>
+
+    <div class="prose-spell mt-8">
+      <p>
+        La mayoría de webs B2B y del tercer sector se sienten "frías". Funcionales, sí.
+        Pero sin nada que te haga sonreír, sin nada que te haga pensar
+        <em>"alguien cuidó este detalle"</em>.
+      </p>
+      <p>
+        En <a href="https://startidea.es">Startidea</a> construimos productos para ONGs,
+        instituciones y empresas con propósito. Y hace tiempo decidimos que la calidad de
+        experiencia <strong>no es un lujo opcional</strong>: es la diferencia entre que un
+        usuario donante repita y que se vaya.
+      </p>
+      <p>
+        Spellbook recoge las micro-interacciones que sí desplegamos en producción.
+        El confetti del primer pedido. La onda que respira al ritmo de la voz de la asistente.
+        El undo toast que evita un susto. El Cmd+K que ahorra 30 segundos cada vez que entras al panel.
+      </p>
+      <p>
+        Cada spell viene con código <strong>copiable bajo licencia MIT</strong>, sin librerías
+        externas (cuando se puede), respetando <code>prefers-reduced-motion</code> por defecto.
+        Si te sirve, llévatelo. Si lo mejoras, abrí un issue.
+      </p>
+
+      <h2>Por qué free + open source</h2>
+      <p>
+        Porque las herramientas que más han influido en nuestro trabajo (Tailwind, Astro,
+        shadcn, GSAP, Lucide) son gratis o liberadas. Devolver es lo mínimo. Y porque queremos
+        que el tercer sector tenga acceso a la misma <em>delight</em> que las webs de Linear o Vercel.
+      </p>
+
+      <h2>Cómo se construyó este sitio</h2>
+      <ul>
+        <li>Astro 5 con content collections MDX</li>
+        <li>Tailwind v4 (vía plugin Vite)</li>
+        <li>Sin JS en cliente para la landing (cada spell trae el suyo si lo necesita)</li>
+        <li>Deploy en Coolify / VPS Hostinger compartido del ecosistema</li>
+      </ul>
+
+      <h2>Contacto</h2>
+      <p>
+        <a href="mailto:mariopablo@startidea.es">mariopablo@startidea.es</a> ·
+        <a href="https://startidea.es">startidea.es</a>
+      </p>
+    </div>
+  </article>
+</Base>

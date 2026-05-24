@@ -1,0 +1,62 @@
+---
+import "@/styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description = "Micro-interacciones que sí usamos en producción. Por Startidea." } = Astro.props;
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600;700&display=swap" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta name="robots" content="index,follow" />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <header class="border-b border-line bg-bone/85 backdrop-blur sticky top-0 z-30">
+      <div class="mx-auto max-w-6xl flex items-center justify-between px-6 py-4">
+        <a href="/" class="flex items-baseline gap-2 font-display text-xl font-semibold">
+          <span>✦</span> Spellbook
+          <span class="text-xs font-sans font-normal text-ink/55 ml-1">by Startidea</span>
+        </a>
+        <nav class="flex items-center gap-5 text-sm text-ink/70">
+          <a href="/" class="hover:text-accent">Catálogo</a>
+          <a href="/sobre" class="hover:text-accent">Por qué</a>
+          <a href="https://github.com/mariopablobarron" target="_blank" rel="noopener" class="hover:text-accent">GitHub ↗</a>
+          <a href="https://startidea.es" target="_blank" rel="noopener" class="rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-bone hover:bg-accent">Startidea ↗</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <footer class="mt-20 border-t border-line bg-bone-soft">
+      <div class="mx-auto max-w-6xl px-6 py-10 text-sm text-ink/60">
+        <p>
+          <strong class="text-ink/80">Spellbook</strong> es la colección abierta de micro-interacciones que
+          <a class="text-accent underline-offset-2 hover:underline" href="https://startidea.es">Startidea</a>
+          usa en sus proyectos reales. Cada spell viene con código copiable bajo licencia MIT.
+        </p>
+        <p class="mt-3 text-xs text-ink/45">
+          Inspirado por <a class="hover:text-accent" href="https://designspells.com" target="_blank" rel="noopener">designspells.com</a> de Meg Lewis.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  html { color-scheme: light; }
+</style>

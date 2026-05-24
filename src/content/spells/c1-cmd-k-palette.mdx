@@ -1,0 +1,106 @@
+---
+title: "Cmd+K palette del admin"
+summary: "Modal de búsqueda global navegable solo con teclado. Productos, promos, pedidos, clientes en un solo input. Sin libraries externas — 0 KB extra al bundle."
+category: "Admin"
+difficulty: "M"
+sourceProject: "TodoMerchandising · Admin"
+publishedAt: 2026-05-24
+tags: ["productivity", "ux", "react"]
+---
+
+## Por qué
+
+Si tú vas a usar un admin **100 veces al día**, cada click ahorrado son
+horas a la semana. Un Cmd+K palette es la herramienta más infravalorada en
+admins B2B. Tu equipo lo descubre y ya no quiere ir al menú con el ratón.
+
+## Backend
+
+Un endpoint unificado que busca en N tablas y devuelve resultados con tipo,
+título, subtítulo, href y un "hint" (estado/precio).
+
+```ts
+// /api/admin/search?q=<query>
+type Result = {
+  type: "product" | "promotion" | "order" | "customer" | "shortcut";
+  id: string;
+  title: string;
+  subtitle?: string;
+  href: string;
+  hint?: string;
+};
+
+// Si q vacío → devuelve "atajos": páginas frecuentes + promos activas + recientes
+// Si q presente → query a cada tabla con ILIKE/contains, take 5 por tipo
+```
+
+## Componente cliente
+
+```tsx
+"use client";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+
+export function CommandPalette() {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState([]);
+  const [cursor, setCursor] = useState(0);
+  const inputRef = useRef(null);
+  const router = useRouter();
+
+  // Toggle global con Cmd+K / Ctrl+K
+  useEffect(() => {
+    function onKey(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setOpen(v => !v);
+      } else if (e.key === "Escape" && open) {
+        setOpen(false);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  // Debounced fetch
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(async () => {
+      const r = await fetch(`/api/admin/search?q=${encodeURIComponent(q)}`, {
+        credentials: "include",
+      });
+      const data = await r.json();
+      setResults(data.results || []);
+      setCursor(0);
+    }, 150);
+    return () => clearTimeout(t);
+  }, [q, open]);
+
+  function onKeyDown(e) {
+    if (e.key === "ArrowDown") { e.preventDefault(); setCursor(c => Math.min(results.length-1, c+1)); }
+    if (e.key === "ArrowUp")   { e.preventDefault(); setCursor(c => Math.max(0, c-1)); }
+    if (e.key === "Enter")     { e.preventDefault(); router.push(results[cursor].href); setOpen(false); }
+  }
+
+  if (!open) return null;
+  return (/* … modal con input + lista */);
+}
+```
+
+## Decisiones
+
+- **0 librerías externas**: ni `cmdk`, ni `downshift`. ~200 líneas vanilla.
+- **Debounce 150 ms**: suficiente para que el LSP no escupa una query por tecla,
+  insuficiente para que se sienta lento.
+- **Q vacío → atajos contextuales**: páginas frecuentes + promos activas +
+  pedidos recientes. El palette nunca está vacío al abrir.
+- **Hover y teclado coexisten**: `onMouseEnter` actualiza el cursor; flechas
+  también. El usuario no pelea con el ratón.
+- **Cap pequeño por tipo (5)**: más resultados convierten el palette en una
+  lista. Mejor encontrar rápido lo top que ofrecer todo.
+
+## Cuándo lo notarás
+
+Tras 3 días de uso: ya no usas el menú lateral.
+Tras 2 semanas: lo echas de menos en otras webs.

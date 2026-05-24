@@ -1,0 +1,52 @@
+---
+import Base from "@/layouts/Base.astro";
+import { getCollection } from "astro:content";
+
+const spells = (await getCollection("spells")).sort(
+  (a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf(),
+);
+
+const categories = Array.from(new Set(spells.map((s) => s.data.category)));
+---
+<Base title="Spellbook · Micro-interacciones de Startidea">
+  <section class="mx-auto max-w-6xl px-6 py-16 lg:py-24">
+    <p class="text-[11px] font-medium uppercase tracking-[0.18em] text-ink/55">Open spellbook</p>
+    <h1 class="mt-3 max-w-3xl font-display text-4xl font-semibold leading-[1.05] lg:text-6xl">
+      Micro-interacciones que <em class="italic text-accent">sí</em> usamos en producción.
+    </h1>
+    <p class="mt-6 max-w-2xl text-lg text-ink/70">
+      Cada spell viene con su código, su demo y un enlace al proyecto real donde lo desplegamos.
+      Licencia MIT. Copia y pega sin pedir permiso.
+    </p>
+    <div class="mt-8 flex flex-wrap gap-2">
+      {categories.map((c) => (
+        <a href={`#cat-${c.toLowerCase()}`} class="rounded-full border border-line bg-bone-soft px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-accent hover:text-accent">{c}</a>
+      ))}
+    </div>
+  </section>
+
+  {categories.map((cat) => {
+    const list = spells.filter((s) => s.data.category === cat);
+    return (
+      <section id={`cat-${cat.toLowerCase()}`} class="mx-auto max-w-6xl px-6 py-10">
+        <div class="mb-6 flex items-baseline justify-between border-b border-line pb-3">
+          <h2 class="font-display text-2xl font-semibold">{cat}</h2>
+          <span class="text-xs text-ink/45">{list.length} spell{list.length !== 1 ? "s" : ""}</span>
+        </div>
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {list.map((s) => (
+            <a href={`/spell/${s.id}/`} class="group flex h-full flex-col rounded-2xl border border-line bg-bone-soft p-5 transition hover:border-accent/40 hover:shadow-lg">
+              <div class="mb-3 flex items-center justify-between text-[10px] uppercase tracking-wider text-ink/45">
+                <span>{cat}</span>
+                <span class="rounded-full bg-bone px-2 py-0.5 font-mono">{s.data.difficulty}</span>
+              </div>
+              <h3 class="font-display text-lg font-semibold leading-tight text-ink group-hover:text-accent">{s.data.title}</h3>
+              <p class="mt-2 line-clamp-3 flex-1 text-sm text-ink/70">{s.data.summary}</p>
+              <p class="mt-4 text-[10px] text-ink/40">{s.data.sourceProject}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+    );
+  })}
+</Base>
