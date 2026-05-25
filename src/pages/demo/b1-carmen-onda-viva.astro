@@ -1,0 +1,120 @@
+---
+import DemoBase from "@/layouts/DemoBase.astro";
+---
+<DemoBase title="Demo · Carmen onda viva">
+  <div class="card">
+    <p class="label">Carmen — agente de voz</p>
+    <canvas id="wave" width="360" height="60"></canvas>
+    <div class="controls">
+      <button id="toggle" type="button" class="active">▶ Hablando</button>
+    </div>
+    <p class="hint">Pulsa para alternar entre "hablando" y "escuchando". La onda interpola color y amplitud.</p>
+  </div>
+</DemoBase>
+
+<style>
+  .card {
+    background: #f5f0e6;
+    border: 1px solid #e8e2d5;
+    border-radius: 24px;
+    padding: 28px;
+    width: 420px;
+    text-align: center;
+  }
+  .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: #1f1f22a0; margin: 0 0 14px; }
+  canvas { display: block; margin: 0 auto; }
+  .controls { margin-top: 16px; }
+  button {
+    background: #1f1f22;
+    color: #f5f0e6;
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.active { background: #e63e73; }
+  .hint { font-size: 12px; color: #1f1f22b0; margin: 16px 0 0; }
+</style>
+
+<script>
+  // Spell B1 — onda con interpolación de color y amplitud.
+  // Como no hay micro real en demo, generamos datos "ruido" tipo Perlin simple.
+  const canvas = document.getElementById("wave");
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+  const slices = 36;
+  const sliceW = w / slices;
+  const heights = new Float32Array(slices);
+  let mode = 1; // 1 = hablando, 0 = escuchando
+  let isSpeaking = true;
+
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const colorIdle = { r: 0xa0, g: 0x9e, b: 0x98 };
+  const colorActive = { r: 0xe6, g: 0x3e, b: 0x73 };
+
+  // Sample sintético — onda sinusoidal con ruido para simular voz/silencio
+  let phase = 0;
+  function getSample() {
+    phase += 0.02;
+    const arr = new Uint8Array(slices);
+    const intensity = isSpeaking ? 220 : 30; // hablando = volumen alto, escuchando = bajo
+    for (let i = 0; i < slices; i++) {
+      const wave = Math.sin(phase + i * 0.3) * Math.sin(phase * 0.5 + i * 0.1);
+      const noise = (Math.random() - 0.5) * 0.4;
+      arr[i] = Math.max(0, Math.min(255, intensity * (0.5 + wave * 0.4 + noise)));
+    }
+    return arr;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    const targetMode = isSpeaking ? 1 : 0;
+    const ease = targetMode > mode ? 0.18 : 0.08;
+    mode += (targetMode - mode) * ease;
+
+    const sample = getSample();
+    const r = Math.round(lerp(colorIdle.r, colorActive.r, mode));
+    const g = Math.round(lerp(colorIdle.g, colorActive.g, mode));
+    const b = Math.round(lerp(colorIdle.b, colorActive.b, mode));
+    const maxScale = lerp(0.35, 0.95, mode);
+
+    for (let i = 0; i < slices; i++) {
+      const v = sample[i] / 255;
+      const positional = 1 - Math.pow((i / (slices - 1)) * 2 - 1, 2) * 0.25;
+      const target = Math.max(0.04, v * maxScale * positional);
+      const prev = heights[i] ?? 0;
+      const followEase = target > prev ? 0.35 : 0.18;
+      heights[i] = prev + (target - prev) * followEase;
+
+      const barH = Math.max(2, heights[i] * h);
+      const x = i * sliceW + 1.5;
+      const y = (h - barH) / 2;
+      const bw = Math.max(1, sliceW - 3);
+      const radius = Math.min(bw / 2, 3);
+      const grad = ctx.createLinearGradient(0, y, 0, y + barH);
+      grad.addColorStop(0, `rgba(${r},${g},${b},0.85)`);
+      grad.addColorStop(0.5, `rgba(${r},${g},${b},1)`);
+      grad.addColorStop(1, `rgba(${r},${g},${b},0.85)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(x, y, bw, barH, radius);
+      } else {
+        ctx.rect(x, y, bw, barH);
+      }
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  document.getElementById("toggle")?.addEventListener("click", (e) => {
+    isSpeaking = !isSpeaking;
+    const btn = e.currentTarget;
+    btn.textContent = isSpeaking ? "▶ Hablando" : "🎧 Escuchando";
+    btn.classList.toggle("active", isSpeaking);
+  });
+</script>

@@ -13,6 +13,17 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 const d = entry.data;
+
+// Lista de slugs que tienen demo en /demo/<slug>/. Manualmente curada
+// para no fallar 404 en iframes de spells sin demo aún.
+const SLUGS_WITH_DEMO = new Set([
+  "a1-confetti-add-to-cart",
+  "a2-precio-fluido",
+  "b1-carmen-onda-viva",
+  "c1-cmd-k-palette",
+  "c2-undo-toast",
+]);
+const hasDemo = SLUGS_WITH_DEMO.has(entry.id);
 ---
 <Base title={`${d.title} · Spellbook`} description={d.summary}>
   <article class="mx-auto max-w-3xl px-6 py-14">
@@ -41,6 +52,33 @@ const d = entry.data;
         <span class="rounded-full bg-bone-soft px-3 py-1">{t}</span>
       ))}
     </div>
+
+    {hasDemo && (
+      <section class="mt-10">
+        <div class="mb-3 flex items-center justify-between">
+          <p class="text-[11px] font-medium uppercase tracking-[0.18em] text-ink/60">
+            Demo en vivo
+          </p>
+          <a
+            href={`/demo/${entry.id}/`}
+            target="_blank"
+            rel="noopener"
+            class="text-xs text-accent hover:underline"
+          >
+            Abrir en pantalla completa ↗
+          </a>
+        </div>
+        <div class="overflow-hidden rounded-3xl border border-line bg-bone-soft">
+          <iframe
+            src={`/demo/${entry.id}/`}
+            title={`Demo de ${d.title}`}
+            loading="lazy"
+            class="w-full"
+            style="height: 480px; border: 0; display: block;"
+          ></iframe>
+        </div>
+      </section>
+    )}
 
     <div class="prose-spell mt-10">
       <Content />

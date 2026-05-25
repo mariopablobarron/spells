@@ -1,0 +1,105 @@
+---
+import DemoBase from "@/layouts/DemoBase.astro";
+---
+<DemoBase title="Demo · Confetti minimalista">
+  <div class="card">
+    <p class="label">Producto · Bolsa de algodón</p>
+    <p class="price">desde 1,85 € <span>/ud</span></p>
+    <p class="hint">Pulsa "Añadir al pedido" varias veces — confetti vanilla, 0 deps.</p>
+    <button id="add-btn" type="button">+ Añadir al pedido</button>
+  </div>
+</DemoBase>
+
+<style>
+  .card {
+    background: #f5f0e6;
+    border: 1px solid #e8e2d5;
+    border-radius: 24px;
+    padding: 32px;
+    width: 340px;
+    text-align: center;
+  }
+  .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: #1f1f22a0; margin: 0; }
+  .price { font-size: 28px; font-weight: 600; color: #e63e73; margin: 12px 0 4px; }
+  .price span { font-size: 12px; color: #1f1f22a0; font-weight: 400; }
+  .hint { font-size: 12px; color: #1f1f22b0; margin: 14px 0 22px; }
+  button {
+    background: #1f1f22;
+    color: #f5f0e6;
+    border: 0;
+    border-radius: 999px;
+    padding: 14px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+  }
+  button:hover { background: #e63e73; }
+  button:active { transform: scale(0.97); }
+</style>
+
+<script>
+  // Spell A1 — confetti vanilla. Pego el código tal cual del spell para
+  // que la demo sea literal lo que muestra el código en /spell/a1.
+  function spellConfetti(origin, opts = {}) {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const { count = 80, duration = 1500, speed = 14, spread = 50, size = 8 } = opts;
+    const colors = ["#E63E73", "#F472B6", "#FBBF24", "#F5F0E6", "#10B981"];
+    let cx, cy;
+    if (origin instanceof HTMLElement) {
+      const r = origin.getBoundingClientRect();
+      cx = r.left + r.width / 2;
+      cy = r.top + r.height / 2;
+    } else { cx = origin.x; cy = origin.y; }
+    const canvas = document.createElement("canvas");
+    canvas.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999";
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext("2d");
+    const spreadRad = (spread * Math.PI) / 180;
+    const particles = Array.from({ length: count }, () => {
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * spreadRad * 2;
+      const v = speed * (0.6 + Math.random() * 0.6);
+      return {
+        x: cx, y: cy,
+        vx: Math.cos(angle) * v,
+        vy: Math.sin(angle) * v,
+        rot: Math.random() * Math.PI * 2,
+        vrot: (Math.random() - 0.5) * 0.4,
+        size: size * (0.6 + Math.random() * 0.8),
+        color: colors[Math.floor(Math.random() * colors.length)],
+        shape: Math.random() < 0.7 ? "rect" : "circle",
+        life: 1,
+      };
+    });
+    const start = performance.now();
+    const draw = (now) => {
+      const t = (now - start) / duration;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (t >= 1) { canvas.remove(); return; }
+      for (const p of particles) {
+        p.vx *= 0.985;
+        p.vy = p.vy * 0.985 + 0.45;
+        p.x += p.vx; p.y += p.vy;
+        p.rot += p.vrot;
+        p.life = t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        if (p.shape === "rect") ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+        else { ctx.beginPath(); ctx.arc(0, 0, p.size/2, 0, Math.PI*2); ctx.fill(); }
+        ctx.restore();
+      }
+      requestAnimationFrame(draw);
+    };
+    requestAnimationFrame(draw);
+  }
+
+  document.getElementById("add-btn")?.addEventListener("click", (e) => {
+    spellConfetti(e.currentTarget);
+  });
+</script>

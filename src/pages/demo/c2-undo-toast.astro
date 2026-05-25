@@ -1,0 +1,161 @@
+---
+import DemoBase from "@/layouts/DemoBase.astro";
+---
+<DemoBase title="Demo · Undo toast">
+  <div class="card">
+    <p class="label">Promociones</p>
+    <ul id="list" class="list">
+      <li data-id="1"><span>−20% Black Friday</span> <button class="del">Borrar</button></li>
+      <li data-id="2"><span>−10% Bienvenida</span> <button class="del">Borrar</button></li>
+      <li data-id="3"><span>2x1 Camisetas verano</span> <button class="del">Borrar</button></li>
+    </ul>
+    <p class="hint">Borra cualquier promo. Tienes 7s para deshacer antes del commit real.</p>
+  </div>
+  <div id="toast-host"></div>
+</DemoBase>
+
+<style>
+  .card {
+    background: #f5f0e6;
+    border: 1px solid #e8e2d5;
+    border-radius: 24px;
+    padding: 28px;
+    width: 380px;
+  }
+  .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: #1f1f22a0; margin: 0 0 16px; text-align: center; }
+  .list { list-style: none; padding: 0; margin: 0; }
+  .list li {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 4px;
+    border-bottom: 1px solid #e8e2d5;
+    font-size: 14px;
+  }
+  .list li:last-child { border: 0; }
+  .del {
+    background: rgba(230, 62, 115, 0.1);
+    color: #b62d59;
+    border: 0;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .del:hover { background: rgba(230, 62, 115, 0.2); }
+  .hint { font-size: 12px; color: #1f1f22b0; margin: 16px 0 0; text-align: center; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f1f22;
+    color: #f5f0e6;
+    border-radius: 16px;
+    min-width: 320px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    overflow: hidden;
+    animation: slide-up 0.3s ease-out;
+  }
+  @keyframes slide-up {
+    from { transform: translate(-50%, 30px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+  }
+  .toast-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+  }
+  .toast-icon {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 14px;
+  }
+  .toast-msg { flex: 1; font-size: 13px; }
+  .toast-undo {
+    background: rgba(245, 240, 230, 0.15);
+    color: #f5f0e6;
+    border: 0; border-radius: 999px;
+    padding: 4px 14px; font-size: 12px; font-weight: 600;
+    cursor: pointer;
+  }
+  .toast-undo:hover { background: rgba(245, 240, 230, 0.25); }
+  .toast-progress {
+    height: 4px; background: rgba(245, 240, 230, 0.1);
+  }
+  .toast-progress-bar {
+    height: 100%; background: #e63e73;
+    transition: width 0.1s linear;
+  }
+</style>
+
+<script>
+  const list = document.getElementById("list");
+  const toastHost = document.getElementById("toast-host");
+  let currentToast = null;
+
+  function showToast(message, onUndo, onCommit) {
+    if (currentToast) currentToast.commit();
+    const wrap = document.createElement("div");
+    wrap.className = "toast";
+    wrap.innerHTML = `
+      <div class="toast-row">
+        <span class="toast-icon">✓</span>
+        <span class="toast-msg">${message}</span>
+        <button class="toast-undo">Deshacer</button>
+      </div>
+      <div class="toast-progress"><div class="toast-progress-bar" style="width:100%"></div></div>
+    `;
+    toastHost.appendChild(wrap);
+
+    const bar = wrap.querySelector(".toast-progress-bar");
+    const start = performance.now();
+    const duration = 7000;
+    let raf;
+    let committed = false;
+
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      bar.style.width = (100 - t * 100) + "%";
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else commit();
+    };
+    raf = requestAnimationFrame(tick);
+
+    const commit = () => {
+      if (committed) return;
+      committed = true;
+      cancelAnimationFrame(raf);
+      onCommit && onCommit();
+      wrap.remove();
+      if (currentToast?.el === wrap) currentToast = null;
+    };
+
+    const undo = () => {
+      if (committed) return;
+      committed = true;
+      cancelAnimationFrame(raf);
+      onUndo && onUndo();
+      wrap.remove();
+      if (currentToast?.el === wrap) currentToast = null;
+    };
+
+    wrap.querySelector(".toast-undo").addEventListener("click", undo);
+    currentToast = { el: wrap, commit, undo };
+  }
+
+  list.addEventListener("click", (e) => {
+    if (!e.target.classList.contains("del")) return;
+    const li = e.target.closest("li");
+    const text = li.querySelector("span").textContent;
+    // Optimistic: ocultar
+    li.style.display = "none";
+    showToast(
+      `Promoción "${text}" eliminada`,
+      () => { li.style.display = "flex"; },
+      () => { /* commit real al backend iría aquí */ },
+    );
+  });
+</script>

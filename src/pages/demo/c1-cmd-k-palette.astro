@@ -1,0 +1,164 @@
+---
+import DemoBase from "@/layouts/DemoBase.astro";
+---
+<DemoBase title="Demo · Cmd+K palette">
+  <div class="card">
+    <p class="hint">Pulsa <kbd>⌘K</kbd> (Mac) o <kbd>Ctrl+K</kbd> (Win/Linux) para abrir el palette.</p>
+    <button id="open">Abrir palette</button>
+  </div>
+
+  <div id="overlay" hidden>
+    <div class="palette" role="dialog" aria-modal="true">
+      <div class="search">
+        <span class="prefix">⌘</span>
+        <input id="q" type="text" placeholder="Buscar producto, promo, pedido…" autofocus />
+        <kbd class="esc">esc</kbd>
+      </div>
+      <ul id="results"></ul>
+      <div class="footer">
+        <span><kbd>↑↓</kbd> navegar · <kbd>↵</kbd> abrir</span>
+      </div>
+    </div>
+  </div>
+</DemoBase>
+
+<style>
+  .card {
+    background: #f5f0e6;
+    border: 1px solid #e8e2d5;
+    border-radius: 24px;
+    padding: 32px;
+    width: 380px;
+    text-align: center;
+  }
+  .hint { font-size: 14px; color: #1f1f22b0; margin: 0 0 18px; }
+  kbd {
+    background: #1f1f22; color: #f5f0e6;
+    border-radius: 6px; padding: 2px 8px;
+    font-family: ui-monospace, monospace; font-size: 12px;
+  }
+  #open {
+    background: #1f1f22; color: #f5f0e6;
+    border: 0; border-radius: 999px;
+    padding: 10px 20px; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+  }
+  #open:hover { background: #e63e73; }
+
+  #overlay {
+    position: fixed; inset: 0;
+    background: rgba(31, 31, 34, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex; justify-content: center;
+    padding-top: 12vh; z-index: 200;
+  }
+  .palette {
+    background: #f5f0e6;
+    border: 1px solid #e8e2d5;
+    border-radius: 16px;
+    width: 480px; max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    overflow: hidden;
+  }
+  .search {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; border-bottom: 1px solid #e8e2d5;
+  }
+  .prefix { color: #1f1f2270; font-size: 14px; }
+  #q {
+    flex: 1; border: 0; outline: 0; background: transparent;
+    font-size: 14px; color: #1f1f22;
+  }
+  .esc { font-size: 10px; }
+  ul {
+    list-style: none; padding: 4px 0; margin: 0;
+    max-height: 280px; overflow-y: auto;
+  }
+  ul li {
+    padding: 10px 16px; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px;
+  }
+  ul li.active { background: rgba(230, 62, 115, 0.1); }
+  ul li .icon { width: 18px; text-align: center; }
+  ul li .subtitle { color: #1f1f2280; font-size: 11px; margin-left: auto; }
+  .footer {
+    border-top: 1px solid #e8e2d5;
+    background: #faf8f5;
+    padding: 8px 16px;
+    font-size: 10px; color: #1f1f2270;
+  }
+</style>
+
+<script>
+  const ITEMS = [
+    { icon: "📦", title: "Bolsa algodón natural", subtitle: "STM-RQ3BNG · desde 1,85 €" },
+    { icon: "📦", title: "Botella térmica 500ml", subtitle: "STM-2HHNW6 · desde 4,80 €" },
+    { icon: "📦", title: "Bolígrafo metálico", subtitle: "STM-A7JYA4 · desde 0,80 €" },
+    { icon: "🏷", title: "Black Friday 2026", subtitle: "promo · −20% activa" },
+    { icon: "🧾", title: "Pedido #1247", subtitle: "Ana López · enviado" },
+    { icon: "→", title: "Productos", subtitle: "/admin/products" },
+    { icon: "→", title: "Newsletter", subtitle: "/admin/marketing/newsletter" },
+  ];
+
+  const overlay = document.getElementById("overlay");
+  const q = document.getElementById("q");
+  const list = document.getElementById("results");
+  let cursor = 0;
+  let filtered = [...ITEMS];
+
+  function open() {
+    overlay.hidden = false;
+    render();
+    setTimeout(() => q.focus(), 30);
+  }
+  function close() { overlay.hidden = true; q.value = ""; cursor = 0; }
+
+  function render() {
+    list.innerHTML = filtered.map((it, i) => `
+      <li class="${i === cursor ? 'active' : ''}" data-idx="${i}">
+        <span class="icon">${it.icon}</span>
+        <span>${it.title}</span>
+        <span class="subtitle">${it.subtitle}</span>
+      </li>
+    `).join("");
+  }
+
+  q.addEventListener("input", () => {
+    const term = q.value.toLowerCase().trim();
+    filtered = ITEMS.filter((it) =>
+      (it.title + " " + it.subtitle).toLowerCase().includes(term),
+    );
+    cursor = 0; render();
+  });
+
+  q.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); cursor = Math.min(filtered.length - 1, cursor + 1); render(); }
+    if (e.key === "ArrowUp") { e.preventDefault(); cursor = Math.max(0, cursor - 1); render(); }
+    if (e.key === "Enter") { e.preventDefault(); close(); /* navegar aquí */ }
+  });
+
+  list.addEventListener("mouseover", (e) => {
+    const li = e.target.closest("li");
+    if (li) { cursor = parseInt(li.dataset.idx, 10); render(); }
+  });
+
+  list.addEventListener("click", (e) => {
+    if (e.target.closest("li")) close();
+  });
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      overlay.hidden ? open() : close();
+    } else if (e.key === "Escape" && !overlay.hidden) {
+      close();
+    }
+  });
+
+  document.getElementById("open")?.addEventListener("click", open);
+</script>
