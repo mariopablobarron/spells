@@ -1,0 +1,32 @@
+src/pages/demo/c1-cmd-k-palette.astro
+  s_65877aa637ec34::t_4951c4cdabcd4f 1-164
+src/pages/demo/a2-precio-fluido.astro
+  s_65877aa637ec34::t_bd5c5189b8983f 1-112
+src/layouts/DemoBase.astro
+  s_65877aa637ec34::t_bf8919685416f4 1-46
+src/pages/demo/b1-carmen-onda-viva.astro
+  s_65877aa637ec34::t_4a9f771c18ec95 1-120
+src/pages/demo/c2-undo-toast.astro
+  s_65877aa637ec34::t_7af0ca800ee7c3 1-161
+src/pages/spell/[...slug].astro
+  s_65877aa637ec34::t_fb8c179f175ce8 16-26
+  s_65877aa637ec34::t_7185695d6c1d65 56-82
+src/pages/demo/a1-confetti-add-to-cart.astro
+  s_65877aa637ec34::t_abe6deaff163bc 1-105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.1",
+  "base_commit_sha": "a8e8ce074706de31e6d500b93a0a98fa9e55c73a",
+  "prompts": {},
+  "sessions": {
+    "s_65877aa637ec34": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "09be501c-fea4-4e5e-ba37-545d057a463d",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "mariopablobarron <mariopablobarron@users.noreply.github.com>"
+    }
+  }
+}
