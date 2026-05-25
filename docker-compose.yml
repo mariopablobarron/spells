@@ -1,16 +1,17 @@
 services:
   spells:
+    # Imagen pre-construida en GH Actions y publicada a GHCR.
+    # Build en CI evita saturar el VPS (incidente 2026-05-25).
+    # Para construir local en dev: `docker compose build` (usa Dockerfile).
+    image: ghcr.io/mariopablobarron/spells:latest
     build:
       context: .
       dockerfile: Dockerfile
-    image: spells-web:latest
     container_name: spells-web
     restart: unless-stopped
     # Límites duros — defensa tras incidente 2026-05-25 (un build de spells
     # saturó el VPS al 172% CPU sostenido y disparó throttling de Hostinger).
     # nginx con HTML estático no necesita más de 128 MB / 0.5 CPU.
-    # El BUILD ya no se hace en VPS — se hará en GH Actions con imagen
-    # publicada a GHCR (TODO próxima iteración).
     mem_limit: 256m
     cpus: 0.5
     networks:
